@@ -42,9 +42,8 @@ from pyspark.sql.types import IntegerType
 julho = spark.read.text("C:/Users/jcavalcs/Downloads/NASA_access_log_Jul95.gz")
 agosto = spark.read.text("C:/Users/jcavalcs/Downloads/NASA_access_log_Aug95.gz")
 
-agosto_julho.count() #3461613
-
 agosto_julho = agosto.union(julho)
+agosto_julho.count() #3461613
 
 splited = agosto_julho.withColumn("url", split(col("value"), " ").getItem(0)).withColumn("timestamp", split(col("value"), " ").getItem(3)).withColumn("timezone", split(col("value"), " ").getItem(4)).withColumn("operation", split(col("value"), " ").getItem(5)).withColumn("request", split(col("value"), " ").getItem(6)).withColumn("http_code", split(col("value"), " ").getItem(8)).withColumn("total_bytes", split(col("value"), " ").getItem(9))
 
