@@ -1,0 +1,113 @@
+Qual o objetivo do comando cache em Spark?
+
+resposta: O comando "cache" em Spark coloca o conteudo do Dataframe em memória para acessos constantes.
+
+O mesmo código implementado em Spark é normalmente mais rápido que a implementação equivalente em
+MapReduce. Por quê?
+
+resposta: O processo em Spark é mais rápido devido ao fato de seu processamento ser "in memory", ao contrário do processamento em Map Reduce, que é um algoritmo de processamento com constantes I/O em disco.
+
+Qual é a função do SparkContext?
+
+resposta: O SparkContext é principal classe de entrada para funcionalidades em Spark. Ela permite ao desenvolvedor conexão com o cluster e é utilizada para definir RDD´s.
+
+Explique com suas palavras o que é Resilient Distributed Datasets (RDD)
+
+resposta: RDD é uma abstração que representa um conjunto de objetos distribuidos no cluster executado em memória. Quando criado, é possível realizar operações de transformação, inclusão e modificação dos dados. O RDD é uma primeira versão de objeto Spark para manipulação de dados, posteriormente tem sido retrabalhado com funcionalidades do SparkSession, que cria dataframes a partir dos RDD´s.
+
+GroupByKey é menos eficiente que reduceByKey em grandes dataset. Por quê?
+
+resposta: A função reduceByKey reduz os dados em cada nó antes de embaralhar e juntar, evitando também que muitos dados sejam trafegados no cluster. Já a função GroupByKey não reduz antes de enviar ao processamento, os dados são enviados no cluster e, dependendo do volume, podem ser armazenados em disco, onerando totalmente seu desempenho.
+
+Explique o que o código Scala abaixo faz.
+val textFile = sc.textFile("hdfs://...") 
+#cria um RDD contendo dados de um arquivo de texto armazenado em hdfs.
+val counts = textFile.flatMap(line => line.split(" "))
+#armazena o conjunto de palavras separadas por espaço
+.map(word => (word, 1)) 
+#cria um valor numérico "1" (contador) por chave-valor para contar cada palavra
+.reduceByKey(_ + _) 
+#reduz em uma unica palavra e sua respectiva quantidade.
+counts.saveAsTextFile("hdfs://...")
+# grava o resultado (palavra; quantidade) em um arquivo do tipo texto no hdfs.
+
+----
+Prática com PySpark:
+---Início
+
+from pyspark.sql.functions import desc
+from pyspark.sql.functions import col, split
+from pyspark.sql.types import IntegerType
+
+julho = spark.read.text("C:/Users/jcavalcs/Downloads/NASA_access_log_Jul95.gz")
+agosto = spark.read.text("C:/Users/jcavalcs/Downloads/NASA_access_log_Aug95.gz")
+
+agosto_julho.count() #3461613
+
+agosto_julho = agosto.union(julho)
+
+splited = agosto_julho.withColumn("url", split(col("value"), " ").getItem(0)).withColumn("timestamp", split(col("value"), " ").getItem(3)).withColumn("timezone", split(col("value"), " ").getItem(4)).withColumn("operation", split(col("value"), " ").getItem(5)).withColumn("request", split(col("value"), " ").getItem(6)).withColumn("http_code", split(col("value"), " ").getItem(8)).withColumn("total_bytes", split(col("value"), " ").getItem(9))
+
+questão1 (Número de hosts únicos): 
+	PySpark: splited.select("url").sort("url").distinct().count() #resultado: 137979
+
+questão2 (Numero de Erros 404):
+	PySpark: splited.filter(splited["http_code"] == "404").count() #Resultado: 20686
+
+Questão3 (Os 5 URLs que mais causaram erro 404):
+	PySpark: splited.filter(splited["http_code"] == "404").groupBy("url").count().sort(desc("count")).show(5) 
+		#Resultado: 
++--------------------+-----+
+|                 url|count|
++--------------------+-----+
+|hoohoo.ncsa.uiuc.edu|  251|
+|piweba3y.prodigy.com|  157|
+|jbiagioni.npt.nuw...|  132|
+|piweba1y.prodigy.com|  114|
+|www-d4.proxy.aol.com|   91|
++--------------------+-----+
+
+Questão4 (Quantidade de erros 404 por dia):
+	PySpark: dia_codigo = splited.select("timestamp", "http_code").filter(splited["http_code"]=="404")
+				dia_codigo1 = dia_codigo.withColumn("dia", split(col("timestamp"), ":").getItem(0))
+				dia_codigo1.groupBy("dia").count().show()
+				#Resultado:
++------------+-----+
+|         dia|count|
++------------+-----+
+|[28/Aug/1995|  408|
+|[21/Aug/1995|  305|
+|[22/Aug/1995|  287|
+|[08/Jul/1995|  299|
+|[27/Aug/1995|  370|
+|[27/Jul/1995|  334|
+|[19/Aug/1995|  206|
+|[09/Jul/1995|  341|
+|[09/Aug/1995|  278|
+|[12/Jul/1995|  459|
+|[25/Aug/1995|  411|
+|[15/Jul/1995|  252|
+|[10/Aug/1995|  313|
+|[22/Jul/1995|  180|
+|[06/Jul/1995|  630|
+|[14/Jul/1995|  408|
+|[13/Aug/1995|  215|
+|[16/Jul/1995|  256|
+|[17/Jul/1995|  403|
+|[01/Jul/1995|  314|
++------------+-----+
+
+
+Questão5 (O total de bytes retornados):
+	PySpark:
+			total_bytes = splited.select("total_bytes").withColumn("total_bytes", splited["total_bytes"].cast(IntegerType()))
+			total_bytes.groupBy().sum().show()
+			#Resultado:
++----------------+
+|sum(total_bytes)|
++----------------+
+|     65143741103|
++----------------+
+
+#fim
+	
