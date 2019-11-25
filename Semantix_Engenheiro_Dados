@@ -1,6 +1,6 @@
-# Qual o objetivo do comando cache em Spark?
+Qual o objetivo do comando cache em Spark?
 
-###### resposta: O comando "cache" em Spark coloca o conteudo do Dataframe em memória para acessos constantes.
+resposta: O comando "cache" em Spark coloca o conteudo do Dataframe em memória para acessos constantes.
 
 O mesmo código implementado em Spark é normalmente mais rápido que a implementação equivalente em
 MapReduce. Por quê?
